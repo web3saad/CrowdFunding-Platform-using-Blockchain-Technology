@@ -1,4 +1,4 @@
-import { client } from "@/app/client";
+import { client } from "../app/client";
 import Link from "next/link";
 import { getContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";

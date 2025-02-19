@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -28,20 +28,18 @@ const CreateCampaign = () => {
     const account = useActiveAccount();
 
     // Cloudinary file upload
-    const uploadFile = async (file: File, filePath: string) => {
+    const uploadFile = async (file: File) => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", "campaigns_preset");
-        formData.append("folder", "sample/campain_data");
+        formData.append("folder", "sample/campaign_data");
 
         try {
-            console.log("Uploading file to Cloudinary:", file.name);
             const response = await fetch("https://api.cloudinary.com/v1_1/dvgdowkff/image/upload", {
                 method: "POST",
                 body: formData,
             });
             const data = await response.json();
-            console.log("Cloudinary response:", data);
             return data.secure_url;
         } catch (error) {
             console.error("Error uploading file to Cloudinary:", error);
@@ -53,9 +51,9 @@ const CreateCampaign = () => {
         e.preventDefault();
 
         try {
-            const governmentIdURL = governmentId ? await uploadFile(governmentId, `campaigns/governmentId/${governmentId.name}`) : "";
-            const proofPhotoURL = proofPhoto ? await uploadFile(proofPhoto, `campaigns/proofPhoto/${proofPhoto.name}`) : "";
-            const liveSelfieURL = liveSelfie ? await uploadFile(liveSelfie, `campaigns/liveSelfie/${liveSelfie.name}`) : "";
+            const governmentIdURL = governmentId ? await uploadFile(governmentId) : "";
+            const proofPhotoURL = proofPhoto ? await uploadFile(proofPhoto) : "";
+            const liveSelfieURL = liveSelfie ? await uploadFile(liveSelfie) : "";
 
             const campaignData = {
                 campaignName,
