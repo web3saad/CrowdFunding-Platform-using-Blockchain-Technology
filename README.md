@@ -1,4 +1,4 @@
-EtherFund
+CrowdFunding Platform using Blockchain Technology
 
 EtherFund is a decentralized crowdfunding platform built on Ethereum. It enables users to create and contribute to fundraising campaigns securely using blockchain technology. With the power of smart contracts, EtherFund ensures transparent and trustless transactions, eliminating intermediaries and reducing transaction fees.
 
