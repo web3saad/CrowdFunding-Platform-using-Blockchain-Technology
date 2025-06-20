@@ -2,7 +2,7 @@
 import { client } from "@/app/client";
 import { CROWDFUNDING_FACTORY } from "@/app/constants/contracts";
 import { MyCampaignCard } from "@/components/MyCampaignCard";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 import { deployPublishedContract } from "thirdweb/deploys";
@@ -12,6 +12,7 @@ export default function DashboardPage() {
     const account = useActiveAccount();
     
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [localCampaigns, setLocalCampaigns] = useState<any[]>([]);
 
     const contract = getContract({
         client: client,
@@ -26,6 +27,11 @@ export default function DashboardPage() {
         params: [account?.address as string]
     });
     
+    // Sync localCampaigns with myCampaigns when myCampaigns changes
+    useEffect(() => {
+        if (myCampaigns) setLocalCampaigns([...myCampaigns]);
+    }, [myCampaigns]);
+
     return (
         <div className="mx-auto max-w-7xl px-4 mt-16 sm:px-6 lg:px-8">
             <div className="flex flex-row justify-between items-center mb-8">
@@ -35,11 +41,10 @@ export default function DashboardPage() {
                     onClick={() => setIsModalOpen(true)}
                 >Create Campaign</button>
             </div>
-            <p className="text-2xl font-semibold mb-4">My Campaigns:</p>
             <div className="grid grid-cols-3 gap-4">
                 {!isLoadingMyCampaigns && (
-                    myCampaigns && myCampaigns.length > 0 ? (
-                        myCampaigns.map((campaign, index) => (
+                    localCampaigns && localCampaigns.length > 0 ? (
+                        localCampaigns.map((campaign, index) => (
                             <MyCampaignCard
                                 key={index}
                                 contractAddress={campaign.campaignAddress}

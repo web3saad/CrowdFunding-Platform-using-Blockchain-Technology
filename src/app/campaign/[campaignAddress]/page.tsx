@@ -8,228 +8,233 @@ import { baseSepolia } from "thirdweb/chains";
 import { lightTheme, TransactionButton, useActiveAccount, useReadContract } from "thirdweb/react";
 
 export default function CampaignPage() {
-    const account = useActiveAccount();
-    const { campaignAddress } = useParams();
-    const [isEditing, setIsEditing] = useState<boolean>(false);
-    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const account = useActiveAccount();
+  const { campaignAddress } = useParams();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const contract = getContract({
-        client: client,
-        chain: baseSepolia,
-        address: campaignAddress as string,
-    });
+  const contract = getContract({
+    client,
+    chain: baseSepolia,
+    address: campaignAddress as string,
+  });
 
-    // Name of the campaign
-    const { data: name, isLoading: isLoadingName } = useReadContract({
-        contract: contract,
-        method: "function name() view returns (string)",
-        params: [],
-    });
+  const { data: name, isLoading: isLoadingName } = useReadContract({
+    contract,
+    method: "function name() view returns (string)",
+    params: [],
+  });
 
-    // Description of the campaign
-    const { data: description } = useReadContract({ 
-        contract, 
-        method: "function description() view returns (string)", 
-        params: [] 
-      });
+  const { data: description } = useReadContract({
+    contract,
+    method: "function description() view returns (string)",
+    params: [],
+  });
 
-    // Campaign deadline
-    const { data: deadline, isLoading: isLoadingDeadline } = useReadContract({
-        contract: contract,
-        method: "function deadline() view returns (uint256)",
-        params: [],
-    });
-    // Convert deadline to a date
-    const deadlineDate = new Date(parseInt(deadline?.toString() as string) * 1000);
-    // Check if deadline has passed
-    const hasDeadlinePassed = deadlineDate < new Date();
+  const { data: deadline, isLoading: isLoadingDeadline } = useReadContract({
+    contract,
+    method: "function deadline() view returns (uint256)",
+    params: [],
+  });
 
-    // Goal amount of the campaign
-    const { data: goal, isLoading: isLoadingGoal } = useReadContract({
-        contract: contract,
-        method: "function goal() view returns (uint256)",
-        params: [],
-    });
-    
-    // Total funded balance of the campaign
-    const { data: balance, isLoading: isLoadingBalance } = useReadContract({
-        contract: contract,
-        method: "function getContractBalance() view returns (uint256)",
-        params: [],
-    });
+  const { data: goal, isLoading: isLoadingGoal } = useReadContract({
+    contract,
+    method: "function goal() view returns (uint256)",
+    params: [],
+  });
 
-    // Calulate the total funded balance percentage
-    const totalBalance = balance?.toString();
-    const totalGoal = goal?.toString();
-    let balancePercentage = (parseInt(totalBalance as string) / parseInt(totalGoal as string)) * 100;
+  const { data: balance, isLoading: isLoadingBalance } = useReadContract({
+    contract,
+    method: "function getContractBalance() view returns (uint256)",
+    params: [],
+  });
 
-    // If balance is greater than or equal to goal, percentage should be 100
-    if (balancePercentage >= 100) {
-        balancePercentage = 100;
-    }
+  const { data: tiers, isLoading: isLoadingTiers } = useReadContract({
+    contract,
+    method: "function getTiers() view returns ((string name, uint256 amount, uint256 backers)[])",
+    params: [],
+  });
 
-    // Get tiers for the campaign
-    const { data: tiers, isLoading: isLoadingTiers } = useReadContract({
-        contract: contract,
-        method: "function getTiers() view returns ((string name, uint256 amount, uint256 backers)[])",
-        params: [],
-    });
+  const { data: owner } = useReadContract({
+    contract,
+    method: "function owner() view returns (address)",
+    params: [],
+  });
 
-    // Get owner of the campaign
-    const { data: owner, isLoading: isLoadingOwner } = useReadContract({
-        contract: contract,
-        method: "function owner() view returns (address)",
-        params: [],
-    });
+  const { data: status } = useReadContract({
+    contract,
+    method: "function state() view returns (uint8)",
+    params: [],
+  });
 
-    // Get status of the campaign
-    const { data: status } = useReadContract({ 
-        contract, 
-        method: "function state() view returns (uint8)", 
-        params: [] 
-      });
-    
-    return (
-        <div className="mx-auto max-w-7xl px-2 mt-4 sm:px-6 lg:px-8">
-            <div className="flex flex-row justify-between items-center">
-                {!isLoadingName && (
-                    <p className="text-4xl font-semibold">{name}</p>
-                )}
-                {owner === account?.address && (
-                    <div className="flex flex-row">
-                        {isEditing && (
-                            <p className="px-4 py-2 bg-gray-500 text-white rounded-md mr-2">
-                                Status:  
-                                {status === 0 ? " Active" : 
-                                status === 1 ? " Successful" :
-                                status === 2 ? " Failed" : "Unknown"}
-                            </p>
-                        )}
-                        <button
-                            className="px-4 py-2 bg-blue-500 text-white rounded-md"
-                            onClick={() => setIsEditing(!isEditing)}
-                        >{isEditing ? "Done" : "Edit"}</button>
-                    </div>
-                )}
-            </div>
-            <div className="my-4">
-                <p className="text-lg font-semibold">Description:</p>
-                <p>{description}</p>
-            </div>
-            <div className="mb-4">
-                <p className="text-lg font-semibold">Deadline</p>
-                {!isLoadingDeadline && (
-                    <p>{deadlineDate.toDateString()}</p>
-                )}
-            </div>
-            {!isLoadingBalance && (
-                <div className="mb-4">
-                    <p className="text-lg font-semibold">Campaign Goal: ${goal?.toString()}</p>
-                    <div className="relative w-full h-6 bg-gray-200 rounded-full dark:bg-gray-700">
-                        <div className="h-6 bg-blue-600 rounded-full dark:bg-blue-500 text-right" style={{ width: `${balancePercentage?.toString()}%`}}>
-                            <p className="text-white dark:text-white text-xs p-1">${balance?.toString()}</p>
-                        </div>
-                        <p className="absolute top-0 right-0 text-white dark:text-white text-xs p-1">
-                            {balancePercentage >= 100 ? "" : `${balancePercentage?.toString()}%`}
-                        </p>
-                    </div>
-                </div>
-                
+  const deadlineDate = new Date(parseInt(deadline?.toString() || "0") * 1000);
+  const totalBalance = parseInt(balance?.toString() || "0");
+  const totalGoal = parseInt(goal?.toString() || "1");
+  let balancePercentage = (totalBalance / totalGoal) * 100;
+  if (balancePercentage >= 100) balancePercentage = 100;
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        {!isLoadingName && (
+          <div className="w-full flex justify-center">
+            <h1 className="text-3xl font-extrabold text-center uppercase text-blue-900 dark:text-blue-400 tracking-wide">{name}</h1>
+          </div>
+        )}
+        {owner === account?.address && (
+          <div className="flex items-center gap-3">
+            {isEditing && (
+              <span className="px-4 py-2 bg-gray-600 text-white text-sm rounded-md">
+                Status: {status === 0 ? "Active" : status === 1 ? "Successful" : "Failed"}
+              </span>
             )}
-            <div>
-                <p className="text-lg font-semibold">Tiers:</p>
-                <div className="grid grid-cols-3 gap-4">
-                    {isLoadingTiers ? (
-                        <p >Loading...</p>
-                    ) : (
-                        tiers && tiers.length > 0 ? (
-                            tiers.map((tier, index) => (
-                                <TierCard
-                                    key={index}
-                                    tier={tier}
-                                    index={index}
-                                    contract={contract}
-                                    isEditing={isEditing}
-                                />
-                            ))
-                        ) : (
-                            !isEditing && (
-                                <p>No tiers available</p>
-                            )
-                        )
-                    )}
-                    {isEditing && (
-                        // Add a button card with text centered in the middle
-                        <button
-                            className="max-w-sm flex flex-col text-center justify-center items-center font-semibold p-6 bg-blue-500 text-white border border-slate-100 rounded-lg shadow"
-                            onClick={() => setIsModalOpen(true)}
-                        >+ Add Tier</button>
-                    )}
-                </div>
-            </div>
-            
-            {isModalOpen && (
-                <CreateCampaignModal
-                    setIsModalOpen={setIsModalOpen}
-                    contract={contract}
-                />
-            )}
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition"
+            >
+              {isEditing ? "Done" : "Edit"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Description</h2>
+        <p className="text-gray-700 dark:text-gray-300">{description}</p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6 mb-6">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow">
+          <p className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Deadline</p>
+          {!isLoadingDeadline && (
+            <p className="text-gray-700 dark:text-gray-300">{deadlineDate.toDateString()}</p>
+          )}
         </div>
-    );
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow">
+          <p className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Funding Progress</p>
+          {!isLoadingBalance && (
+            <>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 h-6 rounded-full relative overflow-hidden mt-2">
+                <div
+                  className="h-full bg-green-500 text-white text-xs font-medium flex items-center justify-end rounded-full transition-all duration-500"
+                  style={{ width: `${balancePercentage}%` }}
+                >
+                  <span className="pr-2">{balancePercentage.toFixed(0)}%</span>
+                </div>
+              </div>
+              <div className="flex justify-between mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <span>Raised: ${balance?.toString()}</span>
+                <span>Goal: ${goal?.toString()}</span>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-3xl font-extrabold text-center uppercase text-blue-900 dark:text-blue-400 mb-4 tracking-wide">Tiers</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {isLoadingTiers ? (
+            <div className="flex justify-center items-center col-span-full py-8">
+              <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+            </div>
+          ) : tiers && tiers.length > 0 ? (
+            tiers.map((tier, index) => (
+              <TierCard
+                key={index}
+                tier={tier}
+                index={index}
+                contract={contract}
+                isEditing={isEditing}
+              />
+            ))
+          ) : (
+            !isEditing && <p className="text-gray-500">No tiers available</p>
+          )}
+
+          {isEditing && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex flex-col justify-center items-center p-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition"
+            >
+              + Add Tier
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isModalOpen && (
+        <CreateCampaignModal setIsModalOpen={setIsModalOpen} contract={contract} />
+      )}
+    </div>
+  );
 }
 
+// Modal Component
 type CreateTierModalProps = {
-    setIsModalOpen: (value: boolean) => void
-    contract: ThirdwebContract
-}
+  setIsModalOpen: (value: boolean) => void;
+  contract: ThirdwebContract;
+};
 
-const CreateCampaignModal = (
-    { setIsModalOpen, contract }: CreateTierModalProps
-) => {
-    const [tierName, setTierName] = useState<string>("");
-    const [tierAmount, setTierAmount] = useState<bigint>(1n);
+const CreateCampaignModal = ({ setIsModalOpen, contract }: CreateTierModalProps) => {
+  const [tierName, setTierName] = useState<string>("");
+  const [tierAmount, setTierAmount] = useState<bigint>(1n);
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center backdrop-blur-md">
-            <div className="w-1/2 bg-slate-100 p-6 rounded-md">
-                <div className="flex justify-between items-center mb-4">
-                    <p className="text-lg font-semibold">Create a Funding Tier</p>
-                    <button
-                        className="text-sm px-4 py-2 bg-slate-600 text-white rounded-md"
-                        onClick={() => setIsModalOpen(false)}
-                    >Close</button>
-                </div>
-                <div className="flex flex-col">
-                    <label>Tier Name:</label>
-                    <input 
-                        type="text" 
-                        value={tierName}
-                        onChange={(e) => setTierName(e.target.value)}
-                        placeholder="Tier Name"
-                        className="mb-4 px-4 py-2 bg-slate-200 rounded-md"
-                    />
-                    <label>Tier Cost:</label>
-                    <input 
-                        type="number"
-                        value={parseInt(tierAmount.toString())}
-                        onChange={(e) => setTierAmount(BigInt(e.target.value))}
-                        className="mb-4 px-4 py-2 bg-slate-200 rounded-md"
-                    />
-                    <TransactionButton
-                        transaction={() => prepareContractCall({
-                            contract: contract,
-                            method: "function addTier(string _name, uint256 _amount)",
-                            params: [tierName, tierAmount]
-                        })}
-                        onTransactionConfirmed={async () => {
-                            alert("Tier added successfully!")
-                            setIsModalOpen(false)
-                        }}
-                        onError={(error) => alert(`Error: ${error.message}`)}
-                        theme={lightTheme()}
-                    >Add Tier</TransactionButton>
-                </div>
-            </div>
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-900 p-6 rounded-lg shadow-xl">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Create a Funding Tier</h3>
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="text-sm px-3 py-1 bg-gray-700 text-white rounded-md"
+          >
+            Close
+          </button>
         </div>
-    )
-}
+
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tier Name</label>
+            <input
+              type="text"
+              value={tierName}
+              onChange={(e) => setTierName(e.target.value)}
+              className="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white"
+              placeholder="Tier Name"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tier Amount</label>
+            <input
+              type="number"
+              value={parseInt(tierAmount.toString())}
+              onChange={(e) => setTierAmount(BigInt(e.target.value))}
+              className="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white"
+            />
+          </div>
+          <TransactionButton
+            transaction={() =>
+              prepareContractCall({
+                contract,
+                method: "function addTier(string _name, uint256 _amount)",
+                params: [tierName, tierAmount],
+              })
+            }
+            onTransactionConfirmed={() => {
+              alert("Tier added successfully!");
+              setIsModalOpen(false);
+            }}
+            onError={(error) => alert(`Error: ${error.message}`)}
+            theme={lightTheme()}
+          >
+            Add Tier
+          </TransactionButton>
+        </div>
+      </div>
+    </div>
+  );
+};

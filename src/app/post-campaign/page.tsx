@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
 
-const CreateCampaign = () => {
+const CreateCampaign = ({ refetchCampaigns }: { refetchCampaigns?: () => void }) => {
     const [campaignName, setCampaignName] = useState("");
     const [campaignDescription, setCampaignDescription] = useState("");
     const [target, setTarget] = useState("");
@@ -76,6 +76,7 @@ const CreateCampaign = () => {
             if (account?.address) {
                 setMessage("Campaign requested successfully!");
                 setMessageType("success");
+                if (refetchCampaigns) refetchCampaigns(); // Refetch campaigns after creation
                 router.push("/dashboard/" + account.address);
             } else {
                 throw new Error("Account address is not available");
